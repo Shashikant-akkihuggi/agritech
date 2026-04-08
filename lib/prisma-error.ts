@@ -20,6 +20,8 @@ function getConnectionHint() {
 export function createPrismaErrorResponse(error: unknown, fallbackMessage: string) {
     const prismaError = error as PrismaLikeError;
     const message = prismaError?.message || '';
+    const details = message || fallbackMessage;
+    const debugDetails = process.env.NODE_ENV !== 'production' ? { details } : {};
 
     if (prismaError?.code === 'P2002') {
         return NextResponse.json({ error: 'A record with this value already exists' }, { status: 400 });
@@ -28,6 +30,7 @@ export function createPrismaErrorResponse(error: unknown, fallbackMessage: strin
     if (prismaError?.code === 'P2021' || message.includes('does not exist')) {
         return NextResponse.json({
             error: 'Database schema is missing or out of date.',
+            ...debugDetails,
             setupHint: 'Run `npm run db:push` against the correct database, or create the tables in Supabase SQL Editor using SUPABASE_SETUP.md.',
         }, { status: 500 });
     }
@@ -39,6 +42,7 @@ export function createPrismaErrorResponse(error: unknown, fallbackMessage: strin
     ) {
         return NextResponse.json({
             error: 'Database authentication failed.',
+            ...debugDetails,
             setupHint: getConnectionHint(),
         }, { status: 503 });
     }
@@ -50,9 +54,10 @@ export function createPrismaErrorResponse(error: unknown, fallbackMessage: strin
     ) {
         return NextResponse.json({
             error: 'Cannot reach the database server.',
+            ...debugDetails,
             setupHint: getConnectionHint(),
         }, { status: 503 });
     }
 
-    return NextResponse.json({ error: fallbackMessage }, { status: 500 });
+    return NextResponse.json({ error: fallbackMessage, ...debugDetails }, { status: 500 });
 }
