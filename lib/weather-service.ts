@@ -28,11 +28,12 @@ export interface ForecastData {
     }>;
 }
 
-export async function fetchWeatherData(lat: number, lon: number): Promise<WeatherData> {
+export async function fetchWeatherData(lat: number, lon: number): Promise<WeatherData | null> {
     const apiKey = process.env.OPENWEATHER_API_KEY;
 
     if (!apiKey) {
-        return generateMockWeatherData();
+        console.warn('OPENWEATHER_API_KEY not configured. Weather data unavailable.');
+        return null;
     }
 
     try {
@@ -52,15 +53,16 @@ export async function fetchWeatherData(lat: number, lon: number): Promise<Weathe
         };
     } catch (error) {
         console.error('Weather API error:', error);
-        return generateMockWeatherData();
+        return null;
     }
 }
 
-export async function fetchForecastData(lat: number, lon: number): Promise<ForecastData> {
+export async function fetchForecastData(lat: number, lon: number): Promise<ForecastData | null> {
     const apiKey = process.env.OPENWEATHER_API_KEY;
 
     if (!apiKey) {
-        return generateMockForecastData();
+        console.warn('OPENWEATHER_API_KEY not configured. Forecast data unavailable.');
+        return null;
     }
 
     try {
@@ -103,47 +105,8 @@ export async function fetchForecastData(lat: number, lon: number): Promise<Forec
         return { hourly, daily };
     } catch (error) {
         console.error('Forecast API error:', error);
-        return generateMockForecastData();
+        return null;
     }
 }
 
-function generateMockWeatherData(): WeatherData {
-    return {
-        temperature: 28 + Math.random() * 10,
-        humidity: 60 + Math.random() * 30,
-        rainfall: Math.random() > 0.7 ? Math.random() * 5 : 0,
-        windSpeed: 5 + Math.random() * 10,
-        pressure: 1010 + Math.random() * 20,
-        condition: ['Clear', 'Clouds', 'Rain'][Math.floor(Math.random() * 3)],
-        rainProbability: Math.random() * 100,
-    };
-}
-
-function generateMockForecastData(): ForecastData {
-    const now = new Date();
-
-    const hourly = Array.from({ length: 8 }, (_, i) => {
-        const time = new Date(now.getTime() + i * 3600000);
-        return {
-            time: time.toISOString(),
-            temperature: 25 + Math.random() * 10,
-            humidity: 60 + Math.random() * 30,
-            rainProbability: Math.random() * 100,
-            condition: ['Clear', 'Clouds', 'Rain'][Math.floor(Math.random() * 3)],
-        };
-    });
-
-    const daily = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date(now.getTime() + i * 86400000);
-        return {
-            date: date.toISOString().split('T')[0],
-            tempMin: 20 + Math.random() * 5,
-            tempMax: 30 + Math.random() * 10,
-            humidity: 60 + Math.random() * 30,
-            rainProbability: Math.random() * 100,
-            condition: ['Clear', 'Clouds', 'Rain'][Math.floor(Math.random() * 3)],
-        };
-    });
-
-    return { hourly, daily };
-}
+// Remove all mock generation functions - no longer needed

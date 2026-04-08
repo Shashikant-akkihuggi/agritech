@@ -6,6 +6,7 @@ import { useFarmStore } from "@/store/useFarmStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Droplets, AlertCircle, CheckCircle, TrendingDown } from "lucide-react";
+import { formatDecimal } from "@/lib/utils";
 
 interface IrrigationDecision {
     decision: string;
@@ -132,18 +133,18 @@ export default function IrrigationPage() {
                                             <div className="flex items-center gap-4">
                                                 <div>
                                                     <p className="text-sm font-medium">Confidence</p>
-                                                    <p className="text-2xl font-bold">{decision.confidence.toFixed(0)}%</p>
+                                                    <p className="text-2xl font-bold">{formatDecimal(decision.confidence, 0)}%</p>
                                                 </div>
                                                 {decision.waterAmount && (
                                                     <div>
                                                         <p className="text-sm font-medium">Water Required</p>
-                                                        <p className="text-2xl font-bold">{decision.waterAmount.toFixed(0)} L</p>
+                                                        <p className="text-2xl font-bold">{formatDecimal(decision.waterAmount, 0)} L</p>
                                                     </div>
                                                 )}
                                                 {decision.waterSaved && (
                                                     <div>
                                                         <p className="text-sm font-medium">Water Saved</p>
-                                                        <p className="text-2xl font-bold">{decision.waterSaved.toFixed(0)} L</p>
+                                                        <p className="text-2xl font-bold">{formatDecimal(decision.waterSaved, 0)} L</p>
                                                     </div>
                                                 )}
                                             </div>

@@ -5,12 +5,32 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number): string {
+// Safe number formatting utilities
+export function formatNumber(value: number | null | undefined): string {
+    return Number(value || 0).toLocaleString();
+}
+
+export function formatCurrency(amount: number | null | undefined): string {
+    const safeAmount = Number(amount || 0);
     return new Intl.NumberFormat('en-IN', {
         style: 'currency',
         currency: 'INR',
         maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(safeAmount);
+}
+
+export function formatDecimal(value: number | null | undefined, decimals: number = 1): string {
+    const safeValue = Number(value || 0);
+    return safeValue.toFixed(decimals);
+}
+
+export function formatPercentage(value: number | null | undefined): string {
+    const safeValue = Number(value || 0);
+    return `${safeValue}%`;
+}
+
+export function displayValue(value: number | null | undefined, fallback: string = "—"): string {
+    return value != null && !isNaN(Number(value)) ? formatNumber(value) : fallback;
 }
 
 export function formatDate(date: Date | string): string {

@@ -1,52 +1,54 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useAuthStore } from "@/store/useAuthStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Droplets, Cloud, Bug, CheckCircle } from "lucide-react";
 
-const alerts = [
-    {
-        id: 1,
-        type: "water",
-        severity: "high",
-        title: "Low Soil Moisture Detected",
-        message: "Field A moisture level below 20%. Immediate irrigation recommended.",
-        time: "2 hours ago",
-        isRead: false,
-    },
-    {
-        id: 2,
-        type: "weather",
-        severity: "medium",
-        title: "Heavy Rain Expected",
-        message: "85% chance of rain in next 6 hours. Consider postponing irrigation.",
-        time: "5 hours ago",
-        isRead: false,
-    },
-    {
-        id: 3,
-        type: "pest",
-        severity: "medium",
-        title: "Pest Activity Detected",
-        message: "Increased pest activity in Field B. Inspection recommended.",
-        time: "1 day ago",
-        isRead: true,
-    },
-    {
-        id: 4,
-        type: "system",
-        severity: "low",
-        title: "Irrigation Completed",
-        message: "Field A irrigation completed successfully. 450L water used.",
-        time: "2 days ago",
-        isRead: true,
-    },
-];
-
 export default function AlertsPage() {
+    const token = useAuthStore((state) => state.token);
+    const [alerts, setAlerts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAlerts = async () => {
+            try {
+                const res = await fetch("/api/alerts", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                setAlerts(data);
+            } catch (error) {
+                console.error("Failed to fetch alerts:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAlerts();
+    }, [token]);
+
+    const handleMarkAsRead = async (alertId: string) => {
+        try {
+            await fetch("/api/alerts", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ alertId, isRead: true }),
+            });
+            setAlerts(alerts.map(a => a.id === alertId ? { ...a, isRead: true } : a));
+        } catch (error) {
+            console.error("Failed to update alert:", error);
+        }
+    };
+
     const getAlertIcon = (type: string) => {
         switch (type) {
             case "water":
+            case "irrigation":
                 return <Droplets className="w-5 h-5" />;
             case "weather":
                 return <Cloud className="w-5 h-5" />;
@@ -79,6 +81,14 @@ export default function AlertsPage() {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            </div>
+        );
+    }
+
     const unreadCount = alerts.filter((a) => !a.isRead).length;
 
     return (
@@ -86,7 +96,7 @@ export default function AlertsPage() {
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900">Alerts & Notifications</h1>
                 <p className="text-gray-500 mt-1">
-                    {unreadCount} unread alert{unreadCount !== 1 ? "s" : ""}
+                    {unreadCount > 0 ? `${unreadCount} unread alert${unreadCount !== 1 ? "s" : ""}` : "All caught up!"}
                 </p>
             </div>
 
@@ -134,58 +144,71 @@ export default function AlertsPage() {
                 </Card>
             </div>
 
-            <div className="flex gap-3 mb-6">
-                <Button variant="outline">All Alerts</Button>
-                <Button variant="outline">Unread Only</Button>
-                <Button variant="outline">High Priority</Button>
-                <Button variant="outline">Mark All as Read</Button>
-            </div>
-
-            <div className="space-y-4">
-                {alerts.map((alert) => (
-                    <Card
-                        key={alert.id}
-                        className={`${getAlertColor(alert.severity)} ${!alert.isRead ? "border-2" : ""
-                            }`}
-                    >
-                        <CardContent className="p-6">
-                            <div className="flex items-start gap-4">
-                                <div className={`p-3 rounded-full ${alert.severity === "high" ? "bg-red-100" :
-                                        alert.severity === "medium" ? "bg-yellow-100" : "bg-blue-100"
-                                    }`}>
-                                    {getAlertIcon(alert.type)}
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div>
-                                            <h3 className="font-semibold text-lg">{alert.title}</h3>
-                                            <p className="text-sm mt-1">{alert.message}</p>
-                                        </div>
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityBadge(
-                                                alert.severity
-                                            )}`}
-                                        >
-                                            {alert.severity.toUpperCase()}
-                                        </span>
+            {alerts.length > 0 ? (
+                <div className="space-y-4">
+                    {alerts.map((alert) => (
+                        <Card
+                            key={alert.id}
+                            className={`${getAlertColor(alert.severity)} ${!alert.isRead ? "border-2" : ""
+                                }`}
+                        >
+                            <CardContent className="p-6">
+                                <div className="flex items-start gap-4">
+                                    <div className={`p-3 rounded-full ${alert.severity === "high" ? "bg-red-100" :
+                                            alert.severity === "medium" ? "bg-yellow-100" : "bg-blue-100"
+                                        }`}>
+                                        {getAlertIcon(alert.type)}
                                     </div>
-                                    <div className="flex items-center justify-between mt-4">
-                                        <p className="text-xs text-gray-500">{alert.time}</p>
-                                        <div className="flex gap-2">
-                                            {!alert.isRead && (
-                                                <Button size="sm" variant="outline">
-                                                    Mark as Read
-                                                </Button>
-                                            )}
-                                            <Button size="sm">Take Action</Button>
+                                    <div className="flex-1">
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div>
+                                                <h3 className="font-semibold text-lg">{alert.title}</h3>
+                                                <p className="text-sm mt-1">{alert.message}</p>
+                                            </div>
+                                            <span
+                                                className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityBadge(
+                                                    alert.severity
+                                                )}`}
+                                            >
+                                                {alert.severity.toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between mt-4">
+                                            <p className="text-xs text-gray-500">
+                                                {new Date(alert.createdAt).toLocaleString()}
+                                            </p>
+                                            <div className="flex gap-2">
+                                                {!alert.isRead && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleMarkAsRead(alert.id)}
+                                                    >
+                                                        Mark as Read
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            ) : (
+                <Card>
+                    <CardContent className="p-12 text-center">
+                        <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No Alerts</h3>
+                        <p className="text-gray-500 mb-4">
+                            You don't have any alerts at the moment
+                        </p>
+                        <p className="text-sm text-gray-400">
+                            Alerts will appear here when there are important updates about your farm
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
 
             <Card className="mt-6 bg-gray-50">
                 <CardHeader>

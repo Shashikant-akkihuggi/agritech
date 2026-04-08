@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DollarSign, CheckCircle, XCircle, Clock } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
 
 export default function FinancePage() {
     const token = useAuthStore((state) => state.token);
@@ -71,7 +72,7 @@ export default function FinancePage() {
                                         <div className="grid grid-cols-3 gap-4 mt-4">
                                             <div>
                                                 <p className="text-sm font-medium">Maximum Loan</p>
-                                                <p className="text-2xl font-bold">₹{eligibility.maxAmount.toLocaleString()}</p>
+                                                <p className="text-2xl font-bold">₹{formatNumber(eligibility.maxAmount)}</p>
                                             </div>
                                             <div>
                                                 <p className="text-sm font-medium">Interest Rate</p>
@@ -105,29 +106,28 @@ export default function FinancePage() {
                                             max={eligibility.maxAmount}
                                         />
                                         <p className="text-xs text-gray-500 mt-1">
-                                            Maximum: ₹{eligibility.maxAmount.toLocaleString()}
+                                            Maximum: ₹{formatNumber(eligibility.maxAmount)}
                                         </p>
                                     </div>
 
                                     <div className="p-4 bg-gray-50 rounded-lg space-y-2">
                                         <div className="flex justify-between text-sm">
                                             <span>Loan Amount:</span>
-                                            <span className="font-semibold">₹{parseInt(loanAmount || "0").toLocaleString()}</span>
+                                            <span className="font-semibold">₹{formatNumber(parseInt(loanAmount || "0"))}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span>Interest ({eligibility.interestRate}%):</span>
                                             <span className="font-semibold">
-                                                ₹{((parseInt(loanAmount || "0") * eligibility.interestRate) / 100).toLocaleString()}
+                                                ₹{formatNumber((parseInt(loanAmount || "0") * eligibility.interestRate) / 100)}
                                             </span>
                                         </div>
                                         <div className="flex justify-between text-sm border-t pt-2">
                                             <span className="font-semibold">Total Repayment:</span>
                                             <span className="font-bold text-lg">
-                                                ₹
-                                                {(
+                                                ₹{formatNumber(
                                                     parseInt(loanAmount || "0") +
                                                     (parseInt(loanAmount || "0") * eligibility.interestRate) / 100
-                                                ).toLocaleString()}
+                                                )}
                                             </span>
                                         </div>
                                     </div>
@@ -162,7 +162,7 @@ export default function FinancePage() {
                                 <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
                                 <h2 className="text-2xl font-bold mb-2">Application Submitted!</h2>
                                 <p className="text-gray-600 mb-6">
-                                    Your loan application for ₹{parseInt(loanAmount).toLocaleString()} has been submitted.
+                                    Your loan application for ₹{formatNumber(parseInt(loanAmount))} has been submitted.
                                     We'll review it within 24-48 hours.
                                 </p>
                                 <Button onClick={() => setShowApplication(false)}>Apply for Another Loan</Button>

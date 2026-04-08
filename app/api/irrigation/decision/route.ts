@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { calculateIrrigationDecision } from '@/lib/irrigation-engine';
 import { fetchWeatherData } from '@/lib/weather-service';
+import { createPrismaErrorResponse } from '@/lib/prisma-error';
 
 export async function POST(req: NextRequest) {
     try {
@@ -67,6 +68,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ...decision, logId: log.id });
     } catch (error) {
         console.error('Irrigation decision error:', error);
-        return NextResponse.json({ error: 'Failed to calculate decision' }, { status: 500 });
+        return createPrismaErrorResponse(error, 'Failed to calculate decision');
     }
 }

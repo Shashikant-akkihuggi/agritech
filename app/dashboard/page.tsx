@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useFarmStore } from "@/store/useFarmStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Droplets, TrendingUp, DollarSign, AlertTriangle } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
 
 export default function DashboardPage() {
     const token = useAuthStore((state) => state.token);
@@ -35,17 +36,21 @@ export default function DashboardPage() {
             }
         };
 
-        fetchFarms();
-    }, [token, setFarms, selectedFarm, setSelectedFarm]);
+        const fetchStats = async () => {
+            try {
+                const res = await fetch("/api/analytics/summary", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                setStats(data);
+            } catch (error) {
+                console.error("Failed to fetch stats:", error);
+            }
+        };
 
-    useEffect(() => {
-        setStats({
-            waterSaved: 12500,
-            efficiency: 87,
-            alerts: 3,
-            revenue: 45000,
-        });
-    }, []);
+        fetchFarms();
+        fetchStats();
+    }, [token, setFarms, selectedFarm, setSelectedFarm]);
 
     if (loading) {
         return (
@@ -84,8 +89,12 @@ export default function DashboardPage() {
                         <Droplets className="w-4 h-4 text-blue-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.waterSaved.toLocaleString()} L</div>
-                        <p className="text-xs text-green-600 mt-1">+12% from last month</p>
+                        <div className="text-2xl font-bold">{formatNumber(stats.waterSaved)} L</div>
+                        {stats.waterSaved > 0 ? (
+                            <p className="text-xs text-gray-500 mt-1">From irrigation logs</p>
+                        ) : (
+                            <p className="text-xs text-gray-500 mt-1">No data yet</p>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -96,7 +105,11 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.efficiency}%</div>
-                        <p className="text-xs text-green-600 mt-1">+5% from last month</p>
+                        {stats.efficiency > 0 ? (
+                            <p className="text-xs text-gray-500 mt-1">Based on irrigation data</p>
+                        ) : (
+                            <p className="text-xs text-gray-500 mt-1">No data yet</p>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -106,8 +119,8 @@ export default function DashboardPage() {
                         <DollarSign className="w-4 h-4 text-yellow-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">₹{stats.revenue.toLocaleString()}</div>
-                        <p className="text-xs text-green-600 mt-1">+8% from last month</p>
+                        <div className="text-2xl font-bold">₹{formatNumber(stats.revenue)}</div>
+                        <p className="text-xs text-gray-500 mt-1">Coming soon</p>
                     </CardContent>
                 </Card>
 
@@ -129,29 +142,16 @@ export default function DashboardPage() {
                         <CardTitle>Recent Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <div className="w-2 h-2 bg-green-600 rounded-full mt-2"></div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium">Irrigation completed</p>
-                                    <p className="text-xs text-gray-500">Field A - 2 hours ago</p>
-                                </div>
+                        {stats.waterSaved > 0 || stats.alerts > 0 ? (
+                            <div className="space-y-4">
+                                <p className="text-sm text-gray-500">Activity tracking coming soon</p>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium">Weather alert received</p>
-                                    <p className="text-xs text-gray-500">Rain expected - 5 hours ago</p>
-                                </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <p className="text-sm text-gray-500">No activity yet</p>
+                                <p className="text-xs text-gray-400 mt-1">Start using the system to see activity</p>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <div className="w-2 h-2 bg-yellow-600 rounded-full mt-2"></div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium">Marketplace listing created</p>
-                                    <p className="text-xs text-gray-500">Wheat 500kg - 1 day ago</p>
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </CardContent>
                 </Card>
 

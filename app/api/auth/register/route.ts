@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, generateToken } from '@/lib/auth';
+import { createPrismaErrorResponse } from '@/lib/prisma-error';
 
 export async function POST(req: NextRequest) {
     try {
@@ -43,20 +44,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Phone number already registered' }, { status: 400 });
         }
 
-        if (error.code === 'P2021' || error.message?.includes('does not exist')) {
-            return NextResponse.json({
-                error: 'Database not initialized. Please run: npm run db:push'
-            }, { status: 500 });
-        }
-
-        if (error.message?.includes('connect') || error.code === 'P1001') {
-            return NextResponse.json({
-                error: 'Cannot connect to database. Check your DATABASE_URL in .env'
-            }, { status: 500 });
-        }
-
-        return NextResponse.json({
-            error: error.message || 'Registration failed. Please check server logs.'
-        }, { status: 500 });
+        return createPrismaErrorResponse(
+            error,
+            error.message || 'Registration failed. Please check server logs.'
+        );
     }
 }

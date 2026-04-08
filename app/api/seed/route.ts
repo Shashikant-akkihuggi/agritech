@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
+import { createPrismaErrorResponse } from '@/lib/prisma-error';
 
 export async function POST(req: NextRequest) {
     try {
@@ -136,6 +137,6 @@ export async function POST(req: NextRequest) {
         });
     } catch (error) {
         console.error('Seed error:', error);
-        return NextResponse.json({ error: 'Failed to seed data' }, { status: 500 });
+        return createPrismaErrorResponse(error, 'Failed to seed data');
     }
 }

@@ -5,20 +5,42 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useFarmStore } from "@/store/useFarmStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Map, Sprout, Activity, AlertTriangle } from "lucide-react";
+import { Map, Sprout, Activity } from "lucide-react";
+import { formatDecimal } from "@/lib/utils";
 
 export default function FarmPage() {
     const token = useAuthStore((state) => state.token);
-    const { selectedFarm, farms } = useFarmStore();
+    const { selectedFarm } = useFarmStore();
     const [fields, setFields] = useState<any[]>([]);
+    const [soilData, setSoilData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (selectedFarm) {
             setFields((selectedFarm as any).fields || []);
+
+            // Fetch soil data for first field if available
+            const fetchSoilData = async () => {
+                const fieldIds = (selectedFarm as any).fields?.map((f: any) => f.id) || [];
+                if (fieldIds.length > 0) {
+                    try {
+                        const res = await fetch(`/api/fields/${fieldIds[0]}/soil-data`, {
+                            headers: { Authorization: `Bearer ${token}` },
+                        });
+                        const data = await res.json();
+                        setSoilData(data);
+                    } catch (error) {
+                        console.error("Failed to fetch soil data:", error);
+                    }
+                }
+                setLoading(false);
+            };
+
+            fetchSoilData();
+        } else {
             setLoading(false);
         }
-    }, [selectedFarm]);
+    }, [selectedFarm, token]);
 
     if (loading) {
         return (
@@ -99,7 +121,7 @@ export default function FarmPage() {
                         <Map className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-600 mb-2">{selectedFarm.location}</p>
                         <p className="text-sm text-gray-500">
-                            Coordinates: {selectedFarm.latitude.toFixed(4)}, {selectedFarm.longitude.toFixed(4)}
+                            Coordinates: {formatDecimal(selectedFarm.latitude, 4)}, {formatDecimal(selectedFarm.longitude, 4)}
                         </p>
                     </div>
                 </CardContent>
@@ -159,44 +181,60 @@ export default function FarmPage() {
                         <CardTitle>Soil Health</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            <div>
-                                <div className="flex justify-between mb-2">
-                                    <span className="text-sm font-medium">Moisture Level</span>
-                                    <span className="text-sm font-semibold">68%</span>
+                        {soilData ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <div className="flex justify-between mb-2">
+                                        <span className="text-sm font-medium">Moisture Level</span>
+                                        <span className="text-sm font-semibold">{formatDecimal(soilData.moisture, 1)}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${Math.min(soilData.moisture || 0, 100)}%` }}></div>
+                                    </div>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: "68%" }}></div>
-                                </div>
+                                {soilData.ph && (
+                                    <div>
+                                        <div className="flex justify-between mb-2">
+                                            <span className="text-sm font-medium">pH Level</span>
+                                            <span className="text-sm font-semibold">{formatDecimal(soilData.ph, 1)}</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                            <div className="bg-green-600 h-2 rounded-full" style={{ width: `${((soilData.ph || 0) / 14) * 100}%` }}></div>
+                                        </div>
+                                    </div>
+                                )}
+                                {soilData.nitrogen && (
+                                    <div>
+                                        <div className="flex justify-between mb-2">
+                                            <span className="text-sm font-medium">Nitrogen</span>
+                                            <span className="text-sm font-semibold">{formatDecimal(soilData.nitrogen, 1)}</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                            <div className="bg-green-600 h-2 rounded-full" style={{ width: `${Math.min(soilData.nitrogen || 0, 100)}%` }}></div>
+                                        </div>
+                                    </div>
+                                )}
+                                {soilData.phosphorus && (
+                                    <div>
+                                        <div className="flex justify-between mb-2">
+                                            <span className="text-sm font-medium">Phosphorus</span>
+                                            <span className="text-sm font-semibold">{formatDecimal(soilData.phosphorus, 1)}</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                            <div className="bg-yellow-600 h-2 rounded-full" style={{ width: `${Math.min(soilData.phosphorus || 0, 100)}%` }}></div>
+                                        </div>
+                                    </div>
+                                )}
+                                <p className="text-xs text-gray-500 mt-4">
+                                    Last updated: {new Date(soilData.timestamp).toLocaleString()}
+                                </p>
                             </div>
-                            <div>
-                                <div className="flex justify-between mb-2">
-                                    <span className="text-sm font-medium">pH Level</span>
-                                    <span className="text-sm font-semibold">6.8</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-green-600 h-2 rounded-full" style={{ width: "75%" }}></div>
-                                </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <p className="text-gray-500">No soil data available</p>
+                                <p className="text-xs text-gray-400 mt-1">Add soil sensors to track health metrics</p>
                             </div>
-                            <div>
-                                <div className="flex justify-between mb-2">
-                                    <span className="text-sm font-medium">Nitrogen</span>
-                                    <span className="text-sm font-semibold">Good</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-green-600 h-2 rounded-full" style={{ width: "80%" }}></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div className="flex justify-between mb-2">
-                                    <span className="text-sm font-medium">Phosphorus</span>
-                                    <span className="text-sm font-semibold">Moderate</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-yellow-600 h-2 rounded-full" style={{ width: "60%" }}></div>
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -205,29 +243,32 @@ export default function FarmPage() {
                         <CardTitle>Crop Health</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            <div className="p-4 bg-green-50 rounded-lg">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="font-semibold">Overall Health</span>
-                                    <span className="text-2xl font-bold text-green-600">Good</span>
+                        {fields.length > 0 && fields.some(f => f.cropType) ? (
+                            <div className="space-y-4">
+                                <div className="p-4 bg-green-50 rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-semibold">Overall Health</span>
+                                        <span className="text-2xl font-bold text-green-600">Monitoring</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600">Based on available data</p>
                                 </div>
-                                <p className="text-sm text-gray-600">No major issues detected</p>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                    <span className="text-sm">Growth Stage</span>
-                                    <span className="text-sm font-semibold">Vegetative</span>
-                                </div>
-                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                    <span className="text-sm">Disease Risk</span>
-                                    <span className="text-sm font-semibold text-green-600">Low</span>
-                                </div>
-                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                    <span className="text-sm">Pest Activity</span>
-                                    <span className="text-sm font-semibold text-yellow-600">Moderate</span>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                                        <span className="text-sm">Active Fields</span>
+                                        <span className="text-sm font-semibold">{fields.filter(f => f.status === 'active').length}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                                        <span className="text-sm">Crops Growing</span>
+                                        <span className="text-sm font-semibold">{fields.filter(f => f.cropType).length}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <p className="text-gray-500">No crops planted yet</p>
+                                <p className="text-xs text-gray-400 mt-1">Plant crops to monitor health</p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

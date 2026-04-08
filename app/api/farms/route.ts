@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { createPrismaErrorResponse } from '@/lib/prisma-error';
 
 export async function GET(req: NextRequest) {
     try {
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(farms);
     } catch (error) {
         console.error('Fetch farms error:', error);
-        return NextResponse.json({ error: 'Failed to fetch farms' }, { status: 500 });
+        return createPrismaErrorResponse(error, 'Failed to fetch farms');
     }
 }
 
@@ -55,6 +56,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(farm);
     } catch (error) {
         console.error('Create farm error:', error);
-        return NextResponse.json({ error: 'Failed to create farm' }, { status: 500 });
+        return createPrismaErrorResponse(error, 'Failed to create farm');
     }
 }
